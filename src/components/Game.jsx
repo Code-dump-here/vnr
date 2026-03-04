@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import Scoreboard from "./Scoreboard";
 
@@ -146,6 +146,7 @@ export default function Game() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [tooltip, setTooltip]     = useState(null); // { key, top, left }
+  const seenTooltips = useRef(new Set()); // each action key shown at most once
   const [eventLog, setEventLog]   = useState([]);
   const [activeTab, setActiveTab] = useState("guide");
 
@@ -295,6 +296,8 @@ export default function Game() {
   }
 
   function handleTooltipShow(e, key) {
+    if (seenTooltips.current.has(key)) return; // already shown once — skip
+    seenTooltips.current.add(key);
     const rect = e.currentTarget.getBoundingClientRect();
     setTooltip({ key, top: rect.top, left: rect.left });
   }
@@ -809,7 +812,7 @@ export default function Game() {
                 <div style={{ background: "rgba(200,160,50,0.08)", border: `1px solid #5a4a10`, padding: "10px 12px", marginTop: 4 }}>
                   <div style={{ color: C.gold, fontWeight: "bold", fontSize: 13, marginBottom: 6 }}>Lưu ý quan trọng</div>
                   <ul style={{ color: C.muted, fontSize: 12, paddingLeft: 14, margin: 0, lineHeight: 2 }}>
-                    <li>Di chuột lên nút để xem chi tiết con số</li>
+                    <li>Di chuột lần đầu lên mỗi nút để xem mô tả (chỉ hiện một lần)</li>
                     <li>Pháp tấn công vùng có ảnh hưởng <em>cao nhất</em></li>
                     <li>Vùng không lên kế hoạch mất 1% ảnh hưởng/quý</li>
                     <li>Mũi tên ↑↓ trên mỗi chỉ số dự báo lượt tới</li>
