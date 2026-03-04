@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 
+const RESULT_DISPLAY = {
+  Victory: "Chiến thắng",
+  Defeat:  "Thất bại"
+};
+
 export default function Scoreboard({ highlightScore }) {
   const [scores, setScores] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,20 +24,20 @@ export default function Scoreboard({ highlightScore }) {
       });
   }, []);
 
-  if (loading) return <p style={{ color: "#888" }}>Loading leaderboard...</p>;
-  if (error) return <p style={{ color: "#c0392b" }}>Failed to load scores: {error}</p>;
-  if (scores.length === 0) return <p style={{ color: "#888" }}>No scores yet. Be the first!</p>;
+  if (loading) return <p style={{ color: "#888" }}>Đang tải bảng xếp hạng...</p>;
+  if (error) return <p style={{ color: "#c0392b" }}>Không thể tải điểm số: {error}</p>;
+  if (scores.length === 0) return <p style={{ color: "#888" }}>Chưa có điểm nào. Hãy là người đầu tiên!</p>;
 
   return (
     <div>
-      <h3 style={{ marginBottom: 8 }}>Leaderboard</h3>
+      <h3 style={{ marginBottom: 8 }}>Bảng xếp hạng</h3>
       <table style={styles.table}>
         <thead>
           <tr>
             <th style={styles.th}>#</th>
-            <th style={styles.th}>Player</th>
-            <th style={styles.th}>Score</th>
-            <th style={styles.th}>Result</th>
+            <th style={styles.th}>Người chơi</th>
+            <th style={styles.th}>Điểm số</th>
+            <th style={styles.th}>Kết quả</th>
           </tr>
         </thead>
         <tbody>
@@ -44,7 +49,7 @@ export default function Scoreboard({ highlightScore }) {
                 <td style={styles.td}>{s.player_name}</td>
                 <td style={{ ...styles.td, fontWeight: "bold" }}>{s.score}</td>
                 <td style={{ ...styles.td, color: s.result === "Victory" ? "#27ae60" : "#c0392b" }}>
-                  {s.result}
+                  {RESULT_DISPLAY[s.result] ?? s.result}
                 </td>
               </tr>
             );

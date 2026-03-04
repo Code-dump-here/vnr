@@ -4,25 +4,36 @@ import Scoreboard from "./Scoreboard";
 
 const TOTAL_TURNS = 40;
 
+// Theoretical maximum: 1000 (victory) + 5 regions × 600 (inf100 net5 risk0) + 500 (mom100 sup100)
+const MAX_SCORE = 4500;
+
+const ACTION_LABELS = {
+  network: "Xây dựng mạng lưới",
+  propaganda: "Tuyên truyền",
+  action: "Tổ chức hành động",
+  cooldown: "Ẩn náu"
+};
+
 const initialRegions = [
-  { name: "Viet Bac", influence: 30, risk: 20, network: 1, planned: null },
-  { name: "Red River Delta", influence: 20, risk: 25, network: 1, planned: null },
-  { name: "Central", influence: 15, risk: 30, network: 0, planned: null },
-  { name: "South", influence: 10, risk: 35, network: 0, planned: null },
-  { name: "Northwest", influence: 25, risk: 20, network: 1, planned: null }
+  { name: "Việt Bắc",              influence: 30, risk: 20, network: 1, planned: null, layLowStreak: 0 },
+  { name: "Đồng bằng sông Hồng",   influence: 20, risk: 25, network: 1, planned: null, layLowStreak: 0 },
+  { name: "Miền Trung",            influence: 15, risk: 30, network: 0, planned: null, layLowStreak: 0 },
+  { name: "Miền Nam",              influence: 10, risk: 35, network: 0, planned: null, layLowStreak: 0 },
+  { name: "Tây Bắc",               influence: 25, risk: 20, network: 1, planned: null, layLowStreak: 0 }
 ];
 
 // Score formula:
-//   Victory base: 1000 | Defeat base: 0
-//   Per region: influence*5 - risk*2 + network*20
-//   Global: momentum*3 + support*2
+//   Cơ bản: 1000 (Chiến thắng) | 0 (Thất bại)
+//   Mỗi vùng: ảnh_hưởng×5 - rủi_ro×2 + mạng_lưới×20
+//   Toàn cục: động_lực×3 + ủng_hộ×2
+//   Tối đa lý thuyết: MAX_SCORE = 4500
 function calculateScore(regions, momentum, support, result) {
   const regionScore = regions.reduce(
     (sum, r) => sum + r.influence * 5 - r.risk * 2 + r.network * 20,
     0
   );
   const base = result === "Victory" ? 1000 : 0;
-  return Math.max(0, base + regionScore + momentum * 3 + support * 2);
+  return Math.max(0, Math.min(MAX_SCORE, base + regionScore + momentum * 3 + support * 2));
 }
 
 export default function Game() {
@@ -32,7 +43,6 @@ export default function Game() {
   const [support, setSupport] = useState(50);
   const [gameOver, setGameOver] = useState(null); // { result, score }
 
-  // Scoreboard submission state
   const [playerName, setPlayerName] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -54,12 +64,25 @@ export default function Game() {
       let riskGain = 0;
       let networkGain = 0;
 
-      if (r.planned === "network") { networkGain = 1; riskGain = 2; }
-      if (r.planned === "propaganda") { influenceGain = 8; riskGain = 4; }
-      if (r.planned === "action") { influenceGain = 12; riskGain = 8; }
-      if (r.planned === "cooldown") { riskGain = -10; influenceGain = -3; }
+      if (!r.planned) {
+        // Exploit fix: idle regions slowly lose organisation
+        influenceGain = -1;
+      } else if (r.planned === "network") {
+        networkGain = 1;
+        riskGain = 2;
+      } else if (r.planned === "propaganda") {
+        influenceGain = 8;
+        riskGain = 4;
+      } else if (r.planned === "action") {
+        influenceGain = 12;
+        riskGain = 8;
+      } else if (r.planned === "cooldown") {
+        // Exploit fix: diminishing returns after 2 consecutive Ẩn náu turns
+        riskGain = r.layLowStreak >= 2 ? -4 : -10;
+        influenceGain = -3;
+      }
 
-      // Network reduces risk gain (each dot absorbs 0.5 risk)
+      // Network reduces risk gain (each node absorbs 0.5 risk)
       riskGain = Math.max(riskGain - r.network * 0.5, riskGain < 0 ? riskGain : 0);
 
       if (currentSupport > 70) influenceGain += 5;
@@ -73,7 +96,7 @@ export default function Game() {
       };
     });
 
-    // French pressure on highest-influence region
+    // Áp lực Pháp vào vùng có ảnh hưởng cao nhất
     const highest = predicted.reduce((a, b) =>
       a.influence > b.influence ? a : b
     );
@@ -83,7 +106,7 @@ export default function Game() {
       return r;
     });
 
-    // Risk escalation
+    // Leo thang rủi ro
     predicted = predicted.map(r => {
       if (r.risk >= 85) r = { ...r, risk: clamp(r.risk + 6) };
       else if (r.risk >= 70) r = { ...r, risk: clamp(r.risk + 4) };
@@ -118,23 +141,35 @@ export default function Game() {
   function resolveTurn() {
     if (gameOver) return;
 
-    // Compute new momentum/support synchronously to avoid stale state in checks
     let newMomentum = momentum;
     let newSupport = support;
+
+    // Exploit fix: cap total momentum gain from actions at +10/turn (prevents mass-action spam)
+    let momentumGain = 0;
     regions.forEach(r => {
-      if (r.planned === "action") newMomentum = clamp(newMomentum + 5);
+      if (r.planned === "action") momentumGain = Math.min(momentumGain + 5, 10);
       if (r.planned === "cooldown") newSupport = clamp(newSupport + 3);
     });
+    newMomentum = clamp(newMomentum + momentumGain);
 
-    // Momentum slowly decays each turn to prevent runaway scores
+    // Động lực suy giảm tự nhiên mỗi lượt
     newMomentum = clamp(newMomentum - 2);
 
     const updated = predictNextState(newSupport);
     const nextTurn = turn + 1;
 
+    // Update layLowStreak and clear planned actions
+    const withStreaks = updated.map((r, i) => ({
+      ...r,
+      layLowStreak: regions[i].planned === "cooldown"
+        ? regions[i].layLowStreak + 1
+        : 0,
+      planned: null
+    }));
+
     setMomentum(newMomentum);
     setSupport(newSupport);
-    setRegions(updated.map(r => ({ ...r, planned: null })));
+    setRegions(withStreaks);
     setTurn(nextTurn);
 
     const highRisk = updated.filter(r => r.risk >= 90).length;
@@ -157,11 +192,20 @@ export default function Game() {
 
   async function submitScore() {
     if (!playerName.trim()) return;
+
+    // Security: strip HTML tags and enforce length
+    const safeName = playerName.trim().replace(/<[^>]*>/g, "").slice(0, 32);
+    if (!safeName) return;
+
+    // Security: recalculate score from actual game state instead of trusting
+    // the stored gameOver.score, which could be tampered with via devtools
+    const recalcScore = calculateScore(regions, momentum, support, gameOver.result);
+
     setSubmitting(true);
     setSubmitError(null);
     const { error } = await supabase.from("game_scores").insert({
-      player_name: playerName.trim(),
-      score: gameOver.score,
+      player_name: safeName,
+      score: recalcScore,
       result: gameOver.result,
       momentum,
       support
@@ -175,7 +219,7 @@ export default function Game() {
   }
 
   // ===============================
-  // GAME OVER SCREEN
+  // MÀN HÌNH KẾT THÚC
   // ===============================
 
   if (gameOver) {
@@ -183,38 +227,38 @@ export default function Game() {
     return (
       <div style={{ padding: 40, maxWidth: 560, fontFamily: "sans-serif" }}>
         <h1 style={{ color: isVictory ? "#27ae60" : "#c0392b", marginBottom: 4 }}>
-          {isVictory ? "Victory" : "Defeat"}
+          {isVictory ? "Chiến thắng" : "Thất bại"}
         </h1>
         <p style={{ color: "#555", marginTop: 0 }}>
           {isVictory
-            ? "The revolutionary campaign succeeded."
-            : "The campaign has failed. France maintains control."}
+            ? "Chiến dịch cách mạng đã thành công."
+            : "Chiến dịch đã thất bại. Pháp vẫn duy trì quyền kiểm soát."}
         </p>
 
         <div style={styles.scoreBox}>
           <div style={{ fontSize: 28, fontWeight: "bold" }}>{gameOver.score}</div>
-          <div style={{ color: "#888", fontSize: 13 }}>Final Score</div>
+          <div style={{ color: "#888", fontSize: 13 }}>Điểm cuối cùng</div>
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 13, marginBottom: 6, color: "#555" }}>Score breakdown</div>
+          <div style={{ fontSize: 13, marginBottom: 6, color: "#555" }}>Chi tiết điểm số</div>
           {regions.map(r => (
             <div key={r.name} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 2 }}>
               <span>{r.name}</span>
               <span style={{ color: "#444" }}>
-                inf {r.influence}% &nbsp;|&nbsp; risk {r.risk}% &nbsp;|&nbsp; net {r.network}
+                ah {r.influence}% &nbsp;|&nbsp; rr {r.risk}% &nbsp;|&nbsp; ml {r.network}
                 &nbsp;&nbsp;
                 <strong>{Math.max(0, r.influence * 5 - r.risk * 2 + r.network * 20)}</strong>
               </span>
             </div>
           ))}
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginTop: 6 }}>
-            <span>Momentum {momentum}% + Support {support}%</span>
+            <span>Động lực {momentum}% + Sự ủng hộ {support}%</span>
             <strong>{momentum * 3 + support * 2}</strong>
           </div>
           {isVictory && (
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginTop: 4 }}>
-              <span>Victory bonus</span>
+              <span>Thưởng chiến thắng</span>
               <strong>1000</strong>
             </div>
           )}
@@ -222,10 +266,10 @@ export default function Game() {
 
         {!submitted ? (
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontWeight: "600", marginBottom: 8 }}>Submit your score</div>
+            <div style={{ fontWeight: "600", marginBottom: 8 }}>Gửi điểm số của bạn</div>
             <input
               type="text"
-              placeholder="Enter your name"
+              placeholder="Nhập tên của bạn"
               value={playerName}
               onChange={e => setPlayerName(e.target.value)}
               onKeyDown={e => e.key === "Enter" && submitScore()}
@@ -240,17 +284,17 @@ export default function Game() {
                 opacity: submitting || !playerName.trim() ? 0.5 : 1
               }}
             >
-              {submitting ? "Submitting..." : "Submit Score"}
+              {submitting ? "Đang gửi..." : "Gửi điểm"}
             </button>
             {submitError && (
               <div style={{ color: "#c0392b", fontSize: 13, marginTop: 6 }}>
-                Error: {submitError}
+                Lỗi: {submitError}
               </div>
             )}
           </div>
         ) : (
           <div style={{ color: "#27ae60", fontWeight: "600", marginBottom: 24 }}>
-            Score submitted!
+            Đã gửi điểm!
           </div>
         )}
 
@@ -260,26 +304,26 @@ export default function Game() {
           onClick={() => window.location.reload()}
           style={{ ...styles.actionButton, marginTop: 24, background: "#444" }}
         >
-          Restart Campaign
+          Khởi động lại chiến dịch
         </button>
       </div>
     );
   }
 
   // ===============================
-  // MAIN GAME SCREEN
+  // MÀN HÌNH CHƠI CHÍNH
   // ===============================
 
   return (
     <div style={{ padding: 20, fontFamily: "sans-serif" }}>
-      <h2>{year} – Q{quarter} (Turn {turn + 1}/{TOTAL_TURNS})</h2>
+      <h2>{year} – Quý {quarter} (Lượt {turn + 1}/{TOTAL_TURNS})</h2>
 
       <div style={{ maxWidth: 500, marginBottom: 20 }}>
-        <div>Momentum {momentum}%</div>
+        <div>Động lực {momentum}%</div>
         <div style={styles.barWrap}>
           <div style={{ ...styles.momentumBar, width: `${momentum}%` }} />
         </div>
-        <div>Public Support {support}%</div>
+        <div>Sự ủng hộ của nhân dân {support}%</div>
         <div style={styles.barWrap}>
           <div style={{ ...styles.supportBar, width: `${support}%` }} />
         </div>
@@ -297,7 +341,7 @@ export default function Game() {
             <strong>{r.name}</strong>
 
             <div>
-              Influence {r.influence}%
+              Ảnh hưởng {r.influence}%
               {getTrend(r.influence, predictedRegions[i].influence, "influence")}
             </div>
             <div style={styles.barWrap}>
@@ -305,14 +349,14 @@ export default function Game() {
             </div>
 
             <div>
-              Risk {r.risk}%
+              Rủi ro {r.risk}%
               {getTrend(r.risk, predictedRegions[i].risk, "risk")}
             </div>
             <div style={styles.barWrap}>
               <div style={{ ...styles.riskBar, width: `${r.risk}%` }} />
             </div>
 
-            <div>Network: {"●".repeat(r.network)}{"○".repeat(5 - r.network)}</div>
+            <div>Mạng lưới: {"●".repeat(r.network)}{"○".repeat(5 - r.network)}</div>
 
             <div style={{ marginTop: 8 }}>
               {["network", "propaganda", "action", "cooldown"].map(type => (
@@ -324,17 +368,20 @@ export default function Game() {
                   }}
                   onClick={() => planAction(i, type)}
                 >
-                  {type === "network" && "Build Network"}
-                  {type === "propaganda" && "Propaganda"}
-                  {type === "action" && "Organize Action"}
-                  {type === "cooldown" && "Lay Low"}
+                  {ACTION_LABELS[type]}
+                  {type === "cooldown" && r.layLowStreak >= 2 && (
+                    <span style={{ color: "#e67e22", fontSize: 11 }}> (!)</span>
+                  )}
                 </button>
               ))}
             </div>
 
             {r.planned && (
               <div style={{ marginTop: 6, fontSize: 12 }}>
-                Planned: {r.planned}
+                Đã lên kế hoạch: {ACTION_LABELS[r.planned]}
+                {r.planned === "cooldown" && r.layLowStreak >= 2 && (
+                  <span style={{ color: "#e67e22" }}> – hiệu quả giảm</span>
+                )}
               </div>
             )}
           </div>
@@ -343,7 +390,7 @@ export default function Game() {
 
       <div style={{ marginTop: 20 }}>
         <button style={styles.endButton} onClick={resolveTurn}>
-          End Quarter
+          Kết thúc quý
         </button>
       </div>
     </div>
@@ -369,9 +416,9 @@ const styles = {
     margin: "4px 0 8px 0"
   },
   influenceBar: { height: "100%", background: "#4a90e2", transition: "width 0.4s ease" },
-  riskBar: { height: "100%", background: "#e25c4a", transition: "width 0.4s ease" },
-  momentumBar: { height: "100%", background: "#3c78d8", transition: "width 0.4s ease" },
-  supportBar: { height: "100%", background: "#4caf50", transition: "width 0.4s ease" },
+  riskBar:      { height: "100%", background: "#e25c4a", transition: "width 0.4s ease" },
+  momentumBar:  { height: "100%", background: "#3c78d8", transition: "width 0.4s ease" },
+  supportBar:   { height: "100%", background: "#4caf50", transition: "width 0.4s ease" },
   button: {
     padding: "6px 10px",
     margin: "4px 4px 0 0",
