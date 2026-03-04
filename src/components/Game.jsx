@@ -123,7 +123,7 @@ function SidebarTab({ label, active, onClick }) {
         background: active ? C.bg : "transparent",
         color: active ? C.gold : C.muted,
         fontFamily: "Georgia, serif",
-        fontSize: 11,
+        fontSize: 13,
         borderBottom: `2px solid ${active ? C.gold : "transparent"}`,
         transition: "color 0.15s",
       }}
@@ -328,13 +328,11 @@ export default function Game() {
             <h1 style={{
               color: isVictory ? C.green : C.red,
               margin: 0,
-              fontSize: 30,
-              letterSpacing: 4,
-              textTransform: "uppercase",
+              fontSize: 32,
             }}>
-              {isVictory ? "Chiến thắng" : "Thất bại"}
+              {isVictory ? "Chiến Thắng" : "Thất Bại"}
             </h1>
-            <p style={{ color: "#777", marginTop: 8, fontStyle: "italic", fontSize: 13 }}>
+            <p style={{ color: "#777", marginTop: 8, fontStyle: "italic", fontSize: 15 }}>
               {isVictory
                 ? "Chiến dịch cách mạng đã thành công. Nhân dân đứng lên."
                 : "Chiến dịch đã thất bại. Pháp vẫn duy trì quyền kiểm soát."}
@@ -351,21 +349,21 @@ export default function Game() {
             marginBottom: 20,
           }}>
             <div style={{ fontSize: 40, fontWeight: "bold", color: C.ink }}>{gameOver.score}</div>
-            <div style={{ fontSize: 12, color: "#888", letterSpacing: 1, textTransform: "uppercase" }}>
+            <div style={{ fontSize: 14, color: "#888" }}>
               Điểm cuối cùng
             </div>
           </div>
 
           {/* Breakdown */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 11, color: "#999", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+            <div style={{ fontSize: 13, color: "#999", marginBottom: 8 }}>
               Chi tiết điểm số
             </div>
             {regions.map(r => (
               <div key={r.name} style={{
                 display: "flex",
                 justifyContent: "space-between",
-                fontSize: 13,
+                fontSize: 14,
                 marginBottom: 4,
                 color: C.ink,
               }}>
@@ -406,7 +404,7 @@ export default function Game() {
           {/* Submit */}
           {!submitted ? (
             <div style={{ marginBottom: 24, borderTop: `1px solid ${C.parchmentDark}`, paddingTop: 16 }}>
-              <div style={{ fontWeight: "bold", marginBottom: 8, fontSize: 13, color: C.ink }}>
+              <div style={{ fontWeight: "bold", marginBottom: 8, fontSize: 15, color: C.ink }}>
                 Gửi điểm số của bạn
               </div>
               <div style={{ display: "flex", gap: 8 }}>
@@ -423,7 +421,7 @@ export default function Game() {
                     border: `1px solid ${C.cardBorder}`,
                     background: "white",
                     fontFamily: "Georgia, serif",
-                    fontSize: 13,
+                    fontSize: 15,
                     color: C.ink,
                   }}
                 />
@@ -437,7 +435,7 @@ export default function Game() {
                     border: "none",
                     cursor: submitting || !playerName.trim() ? "default" : "pointer",
                     fontFamily: "Georgia, serif",
-                    fontSize: 13,
+                    fontSize: 15,
                   }}
                 >
                   {submitting ? "Đang gửi..." : "Gửi điểm"}
@@ -472,9 +470,7 @@ export default function Game() {
               border: "none",
               cursor: "pointer",
               fontFamily: "Georgia, serif",
-              fontSize: 13,
-              letterSpacing: 2,
-              textTransform: "uppercase",
+              fontSize: 15,
             }}
           >
             Khởi động lại chiến dịch
@@ -500,7 +496,7 @@ export default function Game() {
           background: "#0e0c08",
           color: C.parchment,
           padding: "10px 14px",
-          fontSize: 12,
+          fontSize: 13,
           lineHeight: 1.6,
           maxWidth: 240,
           zIndex: 9999,
@@ -527,29 +523,25 @@ export default function Game() {
       }}>
         <div>
           <span style={{
-            fontSize: 22,
+            fontSize: 26,
             fontWeight: "bold",
-            letterSpacing: 4,
             color: C.gold,
-            textTransform: "uppercase",
           }}>
             Kháng Chiến
           </span>
           <span style={{
             color: C.mutedLight,
             marginLeft: 20,
-            fontSize: 12,
+            fontSize: 14,
             fontStyle: "italic",
-            letterSpacing: 1,
           }}>
             Chiến lược giải phóng dân tộc Việt Nam, 1945–1954
           </span>
         </div>
         <div style={{
           color: C.goldLight,
-          fontSize: 14,
+          fontSize: 15,
           fontWeight: "bold",
-          letterSpacing: 1,
           background: "rgba(0,0,0,0.3)",
           padding: "6px 14px",
           border: `1px solid ${C.border}`,
@@ -576,12 +568,12 @@ export default function Game() {
                 border: `1px solid ${stat.warn ? "#6a3030" : C.border}`,
                 padding: "10px 14px",
               }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 14 }}>
                   <span style={{ color: C.muted }}>{stat.label}</span>
                   <span style={{
                     color: stat.warn ? "#e06040" : C.goldLight,
                     fontWeight: "bold",
-                    fontSize: 13,
+                    fontSize: 15,
                   }}>
                     {stat.value}%
                   </span>
@@ -618,7 +610,7 @@ export default function Game() {
                   {/* Card header */}
                   <div style={{
                     fontWeight: "bold",
-                    fontSize: 13,
+                    fontSize: 15,
                     marginBottom: 10,
                     paddingBottom: 6,
                     borderBottom: `1px solid ${C.parchmentMid}`,
@@ -632,24 +624,24 @@ export default function Game() {
                   </div>
 
                   {/* Influence */}
-                  <div style={{ fontSize: 12, marginBottom: 2, display: "flex", justifyContent: "space-between" }}>
+                  <div style={{ fontSize: 13, marginBottom: 2, display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#666" }}>Ảnh hưởng</span>
-                    <span style={{ fontWeight: "bold", fontSize: 12 }}>
+                    <span style={{ fontWeight: "bold", fontSize: 13 }}>
                       {r.influence}%{getTrend(r.influence, pred.influence, "influence")}
                     </span>
                   </div>
-                  <div style={{ height: 5, background: "#d8d0b8", marginBottom: 8 }}>
+                  <div style={{ height: 6, background: "#d8d0b8", marginBottom: 8 }}>
                     <div style={{ height: "100%", width: `${r.influence}%`, background: "#4a80c8", transition: "width 0.4s" }} />
                   </div>
 
                   {/* Risk */}
-                  <div style={{ fontSize: 12, marginBottom: 2, display: "flex", justifyContent: "space-between" }}>
+                  <div style={{ fontSize: 13, marginBottom: 2, display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#666" }}>Rủi ro</span>
-                    <span style={{ fontWeight: "bold", fontSize: 12 }}>
+                    <span style={{ fontWeight: "bold", fontSize: 13 }}>
                       {r.risk}%{getTrend(r.risk, pred.risk, "risk")}
                     </span>
                   </div>
-                  <div style={{ height: 5, background: "#d8d0b8", marginBottom: 8 }}>
+                  <div style={{ height: 6, background: "#d8d0b8", marginBottom: 8 }}>
                     <div style={{
                       height: "100%",
                       width: `${r.risk}%`,
@@ -659,7 +651,7 @@ export default function Game() {
                   </div>
 
                   {/* Network nodes */}
-                  <div style={{ fontSize: 11, color: "#777", marginBottom: 10 }}>
+                  <div style={{ fontSize: 13, color: "#777", marginBottom: 10 }}>
                     Mạng lưới:&nbsp;
                     {Array.from({ length: 5 }, (_, j) => (
                       <span key={j} style={{
@@ -682,8 +674,8 @@ export default function Game() {
                           onMouseEnter={e => handleTooltipShow(e, type)}
                           onMouseLeave={() => setTooltip(null)}
                           style={{
-                            padding: "4px 8px",
-                            fontSize: 11,
+                            padding: "5px 9px",
+                            fontSize: 12,
                             border:  `1px solid ${active ? C.greenLight : C.parchmentDark}`,
                             background: active ? C.greenLight : "rgba(255,255,255,0.7)",
                             color:   active ? "white" : C.ink,
@@ -705,7 +697,7 @@ export default function Game() {
                   {r.planned && (
                     <div style={{
                       marginTop: 7,
-                      fontSize: 11,
+                      fontSize: 12,
                       color: C.greenLight,
                       fontStyle: "italic",
                     }}>
@@ -738,16 +730,14 @@ export default function Game() {
                 border: `1px solid #806010`,
                 cursor: "pointer",
                 fontFamily: "Georgia, serif",
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: "bold",
-                letterSpacing: 1,
                 boxShadow: "2px 3px 8px rgba(0,0,0,0.5)",
-                textTransform: "uppercase",
               }}
             >
               Kết thúc quý →
             </button>
-            <span style={{ color: C.muted, fontSize: 12, fontStyle: "italic" }}>
+            <span style={{ color: C.muted, fontSize: 13, fontStyle: "italic" }}>
               {planned}/{regions.length} vùng đã lên kế hoạch
             </span>
           </div>
@@ -785,7 +775,7 @@ export default function Game() {
             flex: 1,
             overflowY: "auto",
             padding: "16px 14px",
-            fontSize: 12,
+            fontSize: 13,
             lineHeight: 1.7,
             color: C.parchment,
           }}>
@@ -793,10 +783,10 @@ export default function Game() {
             {/* ── GUIDE tab ── */}
             {activeTab === "guide" && (
               <div>
-                <h4 style={{ color: C.gold, margin: "0 0 10px 0", fontSize: 13, letterSpacing: 1, textTransform: "uppercase" }}>
+                <h4 style={{ color: C.gold, margin: "0 0 10px 0", fontSize: 15 }}>
                   Cách chơi
                 </h4>
-                <p style={{ color: C.muted, fontSize: 11, marginTop: 0 }}>
+                <p style={{ color: C.muted, fontSize: 13, marginTop: 0 }}>
                   Bạn lãnh đạo phong trào kháng chiến tại 5 vùng chiến lược.
                   Mỗi quý, chọn một hành động cho từng vùng, rồi nhấn <em>Kết thúc quý</em>.
                 </p>
@@ -808,14 +798,14 @@ export default function Game() {
                   ["Ẩn náu",             "Giảm rủi ro khẩn cấp. Không dùng liên tiếp quá 2 quý — hiệu quả sẽ giảm mạnh!",       "#c05050"],
                 ].map(([name, desc, color]) => (
                   <div key={name} style={{ marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>
-                    <div style={{ color, fontWeight: "bold", fontSize: 12, marginBottom: 2 }}>{name}</div>
-                    <div style={{ color: C.muted, fontSize: 11 }}>{desc}</div>
+                    <div style={{ color, fontWeight: "bold", fontSize: 13, marginBottom: 2 }}>{name}</div>
+                    <div style={{ color: C.muted, fontSize: 12 }}>{desc}</div>
                   </div>
                 ))}
 
                 <div style={{ background: "rgba(200,160,50,0.08)", border: `1px solid #5a4a10`, padding: "10px 12px", marginTop: 4 }}>
-                  <div style={{ color: C.gold, fontWeight: "bold", fontSize: 11, marginBottom: 6 }}>Lưu ý quan trọng</div>
-                  <ul style={{ color: C.muted, fontSize: 11, paddingLeft: 14, margin: 0, lineHeight: 2 }}>
+                  <div style={{ color: C.gold, fontWeight: "bold", fontSize: 13, marginBottom: 6 }}>Lưu ý quan trọng</div>
+                  <ul style={{ color: C.muted, fontSize: 12, paddingLeft: 14, margin: 0, lineHeight: 2 }}>
                     <li>Di chuột lên nút để xem chi tiết con số</li>
                     <li>Pháp tấn công vùng có ảnh hưởng <em>cao nhất</em></li>
                     <li>Vùng không lên kế hoạch mất 1% ảnh hưởng/quý</li>
@@ -828,10 +818,10 @@ export default function Game() {
             {/* ── OBJECTIVES tab ── */}
             {activeTab === "objectives" && (
               <div>
-                <h4 style={{ color: C.gold, margin: "0 0 10px 0", fontSize: 13, letterSpacing: 1, textTransform: "uppercase" }}>
+                <h4 style={{ color: C.gold, margin: "0 0 10px 0", fontSize: 15 }}>
                   Điều kiện chiến thắng
                 </h4>
-                <p style={{ color: C.muted, fontSize: 11, marginTop: 0 }}>
+                <p style={{ color: C.muted, fontSize: 13, marginTop: 0 }}>
                   Đạt đủ 3 điều kiện sau khi kết thúc lượt 40:
                 </p>
 
@@ -847,16 +837,16 @@ export default function Game() {
                     padding: "8px 10px",
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-                      <span style={{ fontSize: 11, color: C.muted }}>{obj.label}</span>
+                      <span style={{ fontSize: 12, color: C.muted }}>{obj.label}</span>
                       <span style={{
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: "bold",
                         color: obj.ok ? "#60b850" : "#d05050",
                       }}>
                         {obj.ok ? "✓" : "✗"} {obj.current}{obj.unit}
                       </span>
                     </div>
-                    <div style={{ fontSize: 10, color: "#5a5a40", fontStyle: "italic" }}>
+                    <div style={{ fontSize: 11, color: "#5a5a40", fontStyle: "italic" }}>
                       Cần đạt: {obj.target}{obj.unit}
                     </div>
                   </div>
@@ -867,10 +857,10 @@ export default function Game() {
                   paddingTop: 12,
                   marginTop: 6,
                 }}>
-                  <div style={{ color: "#d05050", fontSize: 11, fontWeight: "bold", marginBottom: 6 }}>
-                    THẤT BẠI NGAY NẾU:
+                  <div style={{ color: "#d05050", fontSize: 13, fontWeight: "bold", marginBottom: 6 }}>
+                    Thất bại ngay nếu:
                   </div>
-                  <ul style={{ color: C.muted, fontSize: 11, paddingLeft: 14, margin: 0, lineHeight: 2 }}>
+                  <ul style={{ color: C.muted, fontSize: 12, paddingLeft: 14, margin: 0, lineHeight: 2 }}>
                     <li>≥ 3 vùng có rủi ro ≥ 90%</li>
                     <li>Sự ủng hộ nhân dân ≤ 15%</li>
                   </ul>
@@ -882,14 +872,14 @@ export default function Game() {
                   borderTop: `1px solid ${C.border}`,
                   paddingTop: 14,
                 }}>
-                  <div style={{ color: C.gold, fontSize: 10, fontWeight: "bold", letterSpacing: 1, marginBottom: 8, textTransform: "uppercase" }}>
+                  <div style={{ color: C.gold, fontSize: 12, fontWeight: "bold", marginBottom: 8 }}>
                     {era.era}
                   </div>
-                  <p style={{ color: C.parchmentMid, fontSize: 12, fontStyle: "italic", margin: "0 0 4px", lineHeight: 1.7 }}>
+                  <p style={{ color: C.parchmentMid, fontSize: 13, fontStyle: "italic", margin: "0 0 4px", lineHeight: 1.7 }}>
                     {era.quote}
                   </p>
-                  <p style={{ color: C.muted, fontSize: 10, margin: "0 0 10px" }}>{era.author}</p>
-                  <p style={{ color: C.muted, fontSize: 11, margin: 0, lineHeight: 1.7 }}>{era.context}</p>
+                  <p style={{ color: C.muted, fontSize: 12, margin: "0 0 10px" }}>{era.author}</p>
+                  <p style={{ color: C.muted, fontSize: 12, margin: 0, lineHeight: 1.7 }}>{era.context}</p>
                 </div>
               </div>
             )}
@@ -897,11 +887,11 @@ export default function Game() {
             {/* ── LOG tab ── */}
             {activeTab === "log" && (
               <div>
-                <h4 style={{ color: C.gold, margin: "0 0 10px 0", fontSize: 13, letterSpacing: 1, textTransform: "uppercase" }}>
+                <h4 style={{ color: C.gold, margin: "0 0 10px 0", fontSize: 15 }}>
                   Nhật ký chiến dịch
                 </h4>
                 {eventLog.length === 0 ? (
-                  <p style={{ color: C.muted, fontSize: 11, fontStyle: "italic" }}>
+                  <p style={{ color: C.muted, fontSize: 13, fontStyle: "italic" }}>
                     Chưa có sự kiện nào được ghi lại. Hoàn thành một quý để bắt đầu.
                   </p>
                 ) : (
@@ -914,24 +904,23 @@ export default function Game() {
                     }}>
                       <div style={{
                         color: idx === 0 ? C.gold : C.muted,
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: "bold",
                         marginBottom: 4,
-                        letterSpacing: 0.5,
                       }}>
                         {entry.label}
                       </div>
                       {entry.events.map((ev, j) => (
                         <div key={j} style={{
                           color: ev.startsWith("⚠") ? "#d05050" : C.parchmentMid,
-                          fontSize: 11,
+                          fontSize: 13,
                           lineHeight: 1.6,
                         }}>
                           {ev}
                         </div>
                       ))}
                       {entry.events.length === 0 && (
-                        <div style={{ color: C.muted, fontSize: 11, fontStyle: "italic" }}>
+                        <div style={{ color: C.muted, fontSize: 12, fontStyle: "italic" }}>
                           Không có hành động nào.
                         </div>
                       )}
