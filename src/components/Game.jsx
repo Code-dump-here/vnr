@@ -122,7 +122,7 @@ function SidebarTab({ label, active, onClick }) {
         cursor: "pointer",
         background: active ? C.bg : "transparent",
         color: active ? C.gold : C.muted,
-        fontFamily: "Georgia, serif",
+        fontFamily: "'Be Vietnam Pro', sans-serif",
         fontSize: 13,
         borderBottom: `2px solid ${active ? C.gold : "transparent"}`,
         transition: "color 0.15s",
@@ -310,7 +310,7 @@ export default function Game() {
         alignItems: "center",
         justifyContent: "center",
         padding: 24,
-        fontFamily: "Georgia, serif",
+        fontFamily: "'Be Vietnam Pro', sans-serif",
       }}>
         <div style={{
           background: C.parchment,
@@ -328,7 +328,9 @@ export default function Game() {
             <h1 style={{
               color: isVictory ? C.green : C.red,
               margin: 0,
-              fontSize: 32,
+              fontSize: 34,
+              fontFamily: "'Crimson Pro', 'Be Vietnam Pro', serif",
+              fontWeight: "600",
             }}>
               {isVictory ? "Chiến Thắng" : "Thất Bại"}
             </h1>
@@ -420,7 +422,7 @@ export default function Game() {
                     padding: "8px 12px",
                     border: `1px solid ${C.cardBorder}`,
                     background: "white",
-                    fontFamily: "Georgia, serif",
+                    fontFamily: "'Be Vietnam Pro', sans-serif",
                     fontSize: 15,
                     color: C.ink,
                   }}
@@ -434,7 +436,7 @@ export default function Game() {
                     color: "white",
                     border: "none",
                     cursor: submitting || !playerName.trim() ? "default" : "pointer",
-                    fontFamily: "Georgia, serif",
+                    fontFamily: "'Be Vietnam Pro', sans-serif",
                     fontSize: 15,
                   }}
                 >
@@ -469,7 +471,7 @@ export default function Game() {
               color: C.gold,
               border: "none",
               cursor: "pointer",
-              fontFamily: "Georgia, serif",
+              fontFamily: "'Be Vietnam Pro', sans-serif",
               fontSize: 15,
             }}
           >
@@ -485,7 +487,7 @@ export default function Game() {
   const planned  = regions.filter(r => r.planned).length;
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "Georgia, serif", color: C.parchment, display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Be Vietnam Pro', sans-serif", color: C.parchment, display: "flex", flexDirection: "column" }}>
 
       {/* ── Floating tooltip ── */}
       {tooltip && (
@@ -523,9 +525,10 @@ export default function Game() {
       }}>
         <div>
           <span style={{
-            fontSize: 26,
-            fontWeight: "bold",
+            fontSize: 28,
+            fontWeight: "600",
             color: C.gold,
+            fontFamily: "'Crimson Pro', 'Be Vietnam Pro', serif",
           }}>
             Kháng Chiến
           </span>
@@ -680,7 +683,7 @@ export default function Game() {
                             background: active ? C.greenLight : "rgba(255,255,255,0.7)",
                             color:   active ? "white" : C.ink,
                             cursor:  "pointer",
-                            fontFamily: "Georgia, serif",
+                            fontFamily: "'Be Vietnam Pro', sans-serif",
                             transition: "all 0.15s",
                           }}
                         >
@@ -729,7 +732,7 @@ export default function Game() {
                 color: C.ink,
                 border: `1px solid #806010`,
                 cursor: "pointer",
-                fontFamily: "Georgia, serif",
+                fontFamily: "'Be Vietnam Pro', sans-serif",
                 fontSize: 16,
                 fontWeight: "bold",
                 boxShadow: "2px 3px 8px rgba(0,0,0,0.5)",
@@ -875,7 +878,7 @@ export default function Game() {
                   <div style={{ color: C.gold, fontSize: 12, fontWeight: "bold", marginBottom: 8 }}>
                     {era.era}
                   </div>
-                  <p style={{ color: C.parchmentMid, fontSize: 13, fontStyle: "italic", margin: "0 0 4px", lineHeight: 1.7 }}>
+                  <p style={{ color: C.parchmentMid, fontSize: 14, fontStyle: "italic", margin: "0 0 4px", lineHeight: 1.7, fontFamily: "'Crimson Pro', 'Be Vietnam Pro', serif" }}>
                     {era.quote}
                   </p>
                   <p style={{ color: C.muted, fontSize: 12, margin: "0 0 10px" }}>{era.author}</p>

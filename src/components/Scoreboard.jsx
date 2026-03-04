@@ -36,7 +36,7 @@ export default function Scoreboard({ highlightScore }) {
       <h3 style={{ margin: "0 0 10px 0", fontSize: 16, color: "#16100a" }}>
         Bảng xếp hạng
       </h3>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, fontFamily: "Georgia, serif" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, fontFamily: "'Be Vietnam Pro', sans-serif" }}>
         <thead>
           <tr style={{ borderBottom: "2px solid #c4af7a" }}>
             <th style={th}>#</th>
