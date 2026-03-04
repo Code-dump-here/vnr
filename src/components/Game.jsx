@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { supabase } from "../supabaseClient";
 import Scoreboard from "./Scoreboard";
 
@@ -145,8 +145,8 @@ export default function Game() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [tooltip, setTooltip]     = useState(null); // { key, top, left }
-  const seenTooltips = useRef(new Set()); // each action key shown at most once
+  // activeInfo: { regionIdx, actionKey } — drives the inline description box
+  const [activeInfo, setActiveInfo] = useState(null);
   const [eventLog, setEventLog]   = useState([]);
   const [activeTab, setActiveTab] = useState("guide");
 
@@ -295,11 +295,12 @@ export default function Game() {
     setSubmitting(false);
   }
 
-  function handleTooltipShow(e, key) {
-    if (seenTooltips.current.has(key)) return; // already shown once — skip
-    seenTooltips.current.add(key);
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTooltip({ key, top: rect.top, left: rect.left });
+  function toggleInfo(regionIdx, actionKey) {
+    setActiveInfo(prev =>
+      prev?.regionIdx === regionIdx && prev?.actionKey === actionKey
+        ? null
+        : { regionIdx, actionKey }
+    );
   }
 
   // ── GAME OVER SCREEN ────────────────────────────────────────────────────────
@@ -492,30 +493,6 @@ export default function Game() {
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Be Vietnam Pro', sans-serif", color: C.parchment, display: "flex", flexDirection: "column" }}>
 
-      {/* ── Floating tooltip ── */}
-      {tooltip && (
-        <div style={{
-          position: "fixed",
-          top:  Math.max(10, tooltip.top - 95),
-          left: Math.max(10, Math.min(tooltip.left, window.innerWidth - 260)),
-          background: "#0e0c08",
-          color: C.parchment,
-          padding: "10px 14px",
-          fontSize: 13,
-          lineHeight: 1.6,
-          maxWidth: 240,
-          zIndex: 9999,
-          border: `1px solid ${C.gold}`,
-          boxShadow: "3px 4px 16px rgba(0,0,0,0.8)",
-          pointerEvents: "none",
-        }}>
-          <strong style={{ color: C.gold, display: "block", marginBottom: 4 }}>
-            {ACTION_LABELS[tooltip.key]}
-          </strong>
-          {ACTION_TOOLTIPS[tooltip.key]}
-        </div>
-      )}
-
       {/* ── Header banner ── */}
       <div style={{
         background: `linear-gradient(180deg, #1a2810 0%, #243018 100%)`,
@@ -668,35 +645,76 @@ export default function Game() {
                     ))}
                   </div>
 
-                  {/* Action buttons */}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {/* Action buttons — each row: [action button] [? info circle] */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     {["network", "propaganda", "action", "cooldown"].map(type => {
-                      const active = r.planned === type;
-                      const streak = type === "cooldown" && r.layLowStreak >= 2;
+                      const active   = r.planned === type;
+                      const streak   = type === "cooldown" && r.layLowStreak >= 2;
+                      const infoOpen = activeInfo?.regionIdx === i && activeInfo?.actionKey === type;
                       return (
-                        <button
-                          key={type}
-                          onClick={() => planAction(i, type)}
-                          onMouseEnter={e => handleTooltipShow(e, type)}
-                          onMouseLeave={() => setTooltip(null)}
-                          style={{
-                            padding: "5px 9px",
-                            fontSize: 12,
-                            border:  `1px solid ${active ? C.greenLight : C.parchmentDark}`,
-                            background: active ? C.greenLight : "rgba(255,255,255,0.7)",
-                            color:   active ? "white" : C.ink,
-                            cursor:  "pointer",
-                            fontFamily: "'Be Vietnam Pro', sans-serif",
-                            transition: "all 0.15s",
-                          }}
-                        >
-                          {ACTION_LABELS[type]}
-                          {streak && (
-                            <span style={{ color: active ? "#ffcc88" : "#c06010", marginLeft: 2 }}>!</span>
-                          )}
-                        </button>
+                        <div key={type} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <button
+                            onClick={() => planAction(i, type)}
+                            style={{
+                              flex: 1,
+                              padding: "5px 9px",
+                              fontSize: 12,
+                              border:     `1px solid ${active ? C.greenLight : C.parchmentDark}`,
+                              background: active ? C.greenLight : "rgba(255,255,255,0.7)",
+                              color:      active ? "white" : C.ink,
+                              cursor:     "pointer",
+                              fontFamily: "'Be Vietnam Pro', sans-serif",
+                              transition: "all 0.15s",
+                              textAlign:  "left",
+                            }}
+                          >
+                            {ACTION_LABELS[type]}
+                            {streak && <span style={{ color: active ? "#ffcc88" : "#c06010", marginLeft: 4 }}>!</span>}
+                          </button>
+
+                          {/* ⓘ info toggle */}
+                          <button
+                            onClick={() => toggleInfo(i, type)}
+                            title="Xem mô tả"
+                            style={{
+                              width: 20, height: 20,
+                              borderRadius: "50%",
+                              border:     `1px solid ${infoOpen ? C.gold : C.parchmentDark}`,
+                              background: infoOpen ? C.gold : "rgba(255,255,255,0.6)",
+                              color:      infoOpen ? C.ink  : "#888",
+                              fontSize:   11,
+                              fontWeight: "bold",
+                              cursor:     "pointer",
+                              padding:    0,
+                              flexShrink: 0,
+                              lineHeight: "18px",
+                              textAlign:  "center",
+                              fontFamily: "'Be Vietnam Pro', sans-serif",
+                            }}
+                          >
+                            ?
+                          </button>
+                        </div>
                       );
                     })}
+
+                    {/* Inline description — shown when a ? is active for this card */}
+                    {activeInfo?.regionIdx === i && (
+                      <div style={{
+                        padding:    "8px 10px",
+                        background: "#0e0c08",
+                        border:     `1px solid ${C.gold}`,
+                        fontSize:   12,
+                        color:      C.parchment,
+                        lineHeight: 1.6,
+                        marginTop:  2,
+                      }}>
+                        <strong style={{ color: C.gold, display: "block", marginBottom: 3 }}>
+                          {ACTION_LABELS[activeInfo.actionKey]}
+                        </strong>
+                        {ACTION_TOOLTIPS[activeInfo.actionKey]}
+                      </div>
+                    )}
                   </div>
 
                   {/* Planned indicator */}
@@ -812,7 +830,7 @@ export default function Game() {
                 <div style={{ background: "rgba(200,160,50,0.08)", border: `1px solid #5a4a10`, padding: "10px 12px", marginTop: 4 }}>
                   <div style={{ color: C.gold, fontWeight: "bold", fontSize: 13, marginBottom: 6 }}>Lưu ý quan trọng</div>
                   <ul style={{ color: C.muted, fontSize: 12, paddingLeft: 14, margin: 0, lineHeight: 2 }}>
-                    <li>Di chuột lần đầu lên mỗi nút để xem mô tả (chỉ hiện một lần)</li>
+                    <li>Nhấn nút <strong style={{ color: C.gold }}>?</strong> bên cạnh mỗi hành động để xem mô tả chi tiết</li>
                     <li>Pháp tấn công vùng có ảnh hưởng <em>cao nhất</em></li>
                     <li>Vùng không lên kế hoạch mất 1% ảnh hưởng/quý</li>
                     <li>Mũi tên ↑↓ trên mỗi chỉ số dự báo lượt tới</li>
