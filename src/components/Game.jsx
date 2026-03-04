@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import Scoreboard from "./Scoreboard";
 
@@ -136,12 +136,15 @@ function SidebarTab({ label, active, onClick }) {
 // ── Main component ───────────────────────────────────────────────────────────
 
 export default function Game() {
+  const [gameStarted, setGameStarted] = useState(false);
+  const [playerName, setPlayerName] = useState("");
+  const [nameInput, setNameInput]   = useState("");
+
   const [regions, setRegions]     = useState(initialRegions);
   const [turn, setTurn]           = useState(0);
   const [momentum, setMomentum]   = useState(30);
   const [support, setSupport]     = useState(50);
   const [gameOver, setGameOver]   = useState(null);
-  const [playerName, setPlayerName] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -149,6 +152,28 @@ export default function Game() {
   const [activeInfo, setActiveInfo] = useState(null);
   const [eventLog, setEventLog]   = useState([]);
   const [activeTab, setActiveTab] = useState("guide");
+
+  // Auto-submit score when the game ends, using the name collected at start
+  useEffect(() => {
+    if (!gameOver || submitted || submitting || !playerName) return;
+    const safeName = playerName.trim().replace(/<[^>]*>/g, "").slice(0, 32);
+    if (!safeName) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    const recalcScore = calculateScore(regions, momentum, support, gameOver.result);
+    supabase.from("game_scores").insert({
+      player_name: safeName,
+      score:       recalcScore,
+      result:      gameOver.result,
+      momentum,
+      support,
+    }).then(({ error }) => {
+      if (error) setSubmitError(error.message);
+      else       setSubmitted(true);
+      setSubmitting(false);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameOver]);
 
   const year    = 1945 + Math.floor(turn / 4);
   const quarter = (turn % 4) + 1;
@@ -275,31 +300,133 @@ export default function Game() {
     }
   }
 
-  async function submitScore() {
-    if (!playerName.trim()) return;
-    const safeName    = playerName.trim().replace(/<[^>]*>/g, "").slice(0, 32);
-    if (!safeName) return;
-    const recalcScore = calculateScore(regions, momentum, support, gameOver.result);
-
-    setSubmitting(true);
-    setSubmitError(null);
-    const { error } = await supabase.from("game_scores").insert({
-      player_name: safeName,
-      score:       recalcScore,
-      result:      gameOver.result,
-      momentum,
-      support,
-    });
-    if (error) setSubmitError(error.message);
-    else       setSubmitted(true);
-    setSubmitting(false);
-  }
-
   function toggleInfo(regionIdx, actionKey) {
     setActiveInfo(prev =>
       prev?.regionIdx === regionIdx && prev?.actionKey === actionKey
         ? null
         : { regionIdx, actionKey }
+    );
+  }
+
+  // ── START SCREEN ────────────────────────────────────────────────────────────
+  if (!gameStarted) {
+    const canStart = nameInput.trim().length > 0;
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: C.bg,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+        fontFamily: "'Be Vietnam Pro', sans-serif",
+      }}>
+        <div style={{
+          background: C.parchment,
+          maxWidth: 500,
+          width: "100%",
+          padding: "44px 52px",
+          border: `3px double ${C.gold}`,
+          boxShadow: "0 0 80px rgba(0,0,0,0.8), inset 0 0 40px rgba(0,0,0,0.05)",
+          textAlign: "center",
+        }}>
+          {/* Flag + Title */}
+          <div style={{ fontSize: 48, marginBottom: 8, lineHeight: 1 }}>🇻🇳</div>
+          <h1 style={{
+            fontFamily: "'Crimson Pro', 'Be Vietnam Pro', serif",
+            fontSize: 40,
+            fontWeight: "600",
+            color: C.ink,
+            margin: "0 0 4px",
+          }}>
+            Kháng Chiến
+          </h1>
+          <p style={{
+            color: "#888",
+            fontStyle: "italic",
+            fontSize: 14,
+            margin: "0 0 28px",
+          }}>
+            Chiến lược giải phóng dân tộc Việt Nam, 1945–1954
+          </p>
+
+          <div style={{ borderTop: `1px solid ${C.parchmentDark}`, margin: "0 0 28px" }} />
+
+          {/* Historical intro */}
+          <p style={{
+            color: "#555",
+            fontSize: 14,
+            lineHeight: 1.8,
+            margin: "0 0 28px",
+            textAlign: "left",
+          }}>
+            Năm 1945. Pháp tái chiếm Đông Dương. Bạn lãnh đạo phong trào kháng chiến
+            Việt Minh tại 5 vùng chiến lược trong 40 quý — 10 năm lịch sử quyết định
+            vận mệnh dân tộc.
+          </p>
+
+          {/* Name entry */}
+          <div style={{ textAlign: "left", marginBottom: 20 }}>
+            <label style={{
+              display: "block",
+              fontWeight: "bold",
+              fontSize: 14,
+              color: C.ink,
+              marginBottom: 8,
+            }}>
+              Nhập tên chỉ huy của bạn
+            </label>
+            <input
+              type="text"
+              autoFocus
+              placeholder="Tên của bạn"
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter" && canStart) {
+                  setPlayerName(nameInput.trim());
+                  setGameStarted(true);
+                }
+              }}
+              maxLength={32}
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                border: `1px solid ${C.cardBorder}`,
+                background: "white",
+                fontFamily: "'Be Vietnam Pro', sans-serif",
+                fontSize: 16,
+                color: C.ink,
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          <button
+            disabled={!canStart}
+            onClick={() => {
+              setPlayerName(nameInput.trim());
+              setGameStarted(true);
+            }}
+            style={{
+              width: "100%",
+              padding: "13px 0",
+              background: canStart
+                ? `linear-gradient(180deg, #c8a840 0%, #a08020 100%)`
+                : "#ccc",
+              color: canStart ? C.ink : "#888",
+              border: canStart ? `1px solid #806010` : `1px solid #bbb`,
+              cursor: canStart ? "pointer" : "default",
+              fontFamily: "'Be Vietnam Pro', sans-serif",
+              fontSize: 17,
+              fontWeight: "bold",
+              boxShadow: canStart ? "2px 3px 8px rgba(0,0,0,0.3)" : "none",
+            }}
+          >
+            Bắt đầu chiến dịch →
+          </button>
+        </div>
+      </div>
     );
   }
 
@@ -407,61 +534,20 @@ export default function Game() {
             )}
           </div>
 
-          {/* Submit */}
-          {!submitted ? (
-            <div style={{ marginBottom: 24, borderTop: `1px solid ${C.parchmentDark}`, paddingTop: 16 }}>
-              <div style={{ fontWeight: "bold", marginBottom: 8, fontSize: 15, color: C.ink }}>
-                Gửi điểm số của bạn
+          {/* Submit status */}
+          <div style={{ borderTop: `1px solid ${C.parchmentDark}`, paddingTop: 14, marginBottom: 20, textAlign: "center" }}>
+            {submitting && (
+              <div style={{ color: "#888", fontSize: 14 }}>Đang gửi điểm của <strong>{playerName}</strong>…</div>
+            )}
+            {submitted && (
+              <div style={{ color: C.green, fontWeight: "bold", fontSize: 14 }}>
+                ✓ Đã gửi điểm của <strong>{playerName}</strong> thành công!
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  type="text"
-                  placeholder="Nhập tên của bạn"
-                  value={playerName}
-                  onChange={e => setPlayerName(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && submitScore()}
-                  maxLength={32}
-                  style={{
-                    flex: 1,
-                    padding: "8px 12px",
-                    border: `1px solid ${C.cardBorder}`,
-                    background: "white",
-                    fontFamily: "'Be Vietnam Pro', sans-serif",
-                    fontSize: 15,
-                    color: C.ink,
-                  }}
-                />
-                <button
-                  onClick={submitScore}
-                  disabled={submitting || !playerName.trim()}
-                  style={{
-                    padding: "8px 16px",
-                    background: submitting || !playerName.trim() ? "#aaa" : C.green,
-                    color: "white",
-                    border: "none",
-                    cursor: submitting || !playerName.trim() ? "default" : "pointer",
-                    fontFamily: "'Be Vietnam Pro', sans-serif",
-                    fontSize: 15,
-                  }}
-                >
-                  {submitting ? "Đang gửi..." : "Gửi điểm"}
-                </button>
-              </div>
-              {submitError && (
-                <div style={{ color: C.red, fontSize: 12, marginTop: 6 }}>Lỗi: {submitError}</div>
-              )}
-            </div>
-          ) : (
-            <div style={{
-              color: C.green,
-              fontWeight: "bold",
-              marginBottom: 24,
-              textAlign: "center",
-              fontSize: 14,
-            }}>
-              ✓ Đã gửi điểm thành công!
-            </div>
-          )}
+            )}
+            {submitError && (
+              <div style={{ color: C.red, fontSize: 13 }}>Lỗi khi gửi điểm: {submitError}</div>
+            )}
+          </div>
 
           <Scoreboard highlightScore={submitted ? gameOver.score : undefined} />
 
@@ -521,15 +607,18 @@ export default function Game() {
             Chiến lược giải phóng dân tộc Việt Nam, 1945–1954
           </span>
         </div>
-        <div style={{
-          color: C.goldLight,
-          fontSize: 15,
-          fontWeight: "bold",
-          background: "rgba(0,0,0,0.3)",
-          padding: "6px 14px",
-          border: `1px solid ${C.border}`,
-        }}>
-          {year} &mdash; Quý {quarter} &nbsp;·&nbsp; Lượt {turn + 1}/{TOTAL_TURNS}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ color: C.muted, fontSize: 13 }}>{playerName}</span>
+          <div style={{
+            color: C.goldLight,
+            fontSize: 15,
+            fontWeight: "bold",
+            background: "rgba(0,0,0,0.3)",
+            padding: "6px 14px",
+            border: `1px solid ${C.border}`,
+          }}>
+            {year} &mdash; Quý {quarter} &nbsp;·&nbsp; Lượt {turn + 1}/{TOTAL_TURNS}
+          </div>
         </div>
       </div>
 
