@@ -33,10 +33,10 @@ export default function Scoreboard({ highlightScore }) {
 
   return (
     <div style={{ borderTop: "1px solid #c4af7a", paddingTop: 14, marginTop: 4 }}>
-      <h3 style={{ margin: "0 0 10px 0", fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: "#16100a" }}>
+      <h3 style={{ margin: "0 0 10px 0", fontSize: 16, color: "#16100a" }}>
         Bảng xếp hạng
       </h3>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, fontFamily: "Georgia, serif" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, fontFamily: "Georgia, serif" }}>
         <thead>
           <tr style={{ borderBottom: "2px solid #c4af7a" }}>
             <th style={th}>#</th>
@@ -76,14 +76,13 @@ export default function Scoreboard({ highlightScore }) {
 
 const th = {
   textAlign: "left",
-  padding: "5px 8px",
+  padding: "6px 10px",
   fontWeight: "700",
   color: "#444",
-  fontSize: 11,
-  letterSpacing: 0.5,
+  fontSize: 13,
 };
 
 const td = {
-  padding: "5px 8px",
+  padding: "6px 10px",
   color: "#16100a",
 };
