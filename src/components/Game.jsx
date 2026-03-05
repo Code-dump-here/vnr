@@ -84,6 +84,22 @@ const initialRegions = [
   { name: "Tây Bắc",             influence: 18, risk: 28, network: 1, planned: null, layLowStreak: 0 },
 ];
 
+// ── Random events ────────────────────────────────────────────────────────────
+const RANDOM_EVENTS = [
+  // Bad
+  { label: "Đàn áp đột ngột tại {name}",     type: "bad",  target: "region", apply: r => ({ risk:    Math.min(100, r.risk    + 15) }) },
+  { label: "Nội gián bị bắt tại {name}",     type: "bad",  target: "region", apply: r => ({ network: Math.max(0,   r.network - 1)  }) },
+  { label: "Ảnh hưởng sụp đổ tại {name}",    type: "bad",  target: "region", apply: r => ({ influence: Math.max(0, r.influence - 12) }) },
+  { label: "Chiến dịch kiểm duyệt toàn quốc", type: "bad", target: "global", apply: () => ({ supportDelta: -10 }) },
+  { label: "Tin tức thất trận lan rộng",       type: "bad", target: "global", apply: () => ({ momentumDelta: -8 }) },
+  // Good
+  { label: "Tình nguyện viên gia nhập {name}", type: "good", target: "region", apply: r => ({ influence: Math.min(100, r.influence + 10) }) },
+  { label: "Cơ sở bí mật mới tại {name}",      type: "good", target: "region", apply: r => ({ network:   Math.min(5,   r.network   + 1)  }) },
+  { label: "Dân làng {name} đứng về phía ta",  type: "good", target: "region", apply: r => ({ risk:      Math.max(0,   r.risk      - 12) }) },
+  { label: "Làn sóng ủng hộ nhân dân",          type: "good", target: "global", apply: () => ({ supportDelta: +10 }) },
+  { label: "Tinh thần chiến đấu dâng cao",       type: "good", target: "global", apply: () => ({ momentumDelta: +8 }) },
+];
+
 function calculateScore(regions, momentum, support, result) {
   const regionScore = regions.reduce(
     (sum, r) => sum + r.influence * 5 - r.risk * 2 + r.network * 20,
@@ -181,8 +197,11 @@ export default function Game() {
   const era     = ERA_CONTEXT[Math.min(3, Math.floor(turn / 10))];
 
   // ── Prediction ─────────────────────────────────────────────────────────────
-  function predictNextState(currentSupport) {
+  function predictNextState(currentSupport, currentMomentum = momentum) {
     let predicted = regions.map(r => ({ ...r }));
+
+    // French pressure escalates each era
+    const frenchPressure = turn < 10 ? 8 : turn < 20 ? 10 : turn < 30 ? 12 : 15;
 
     predicted = predicted.map(r => {
       let influenceGain = 0, riskGain = 0, networkGain = 0;
@@ -194,15 +213,21 @@ export default function Game() {
       } else if (r.planned === "propaganda") {
         influenceGain = 8; riskGain = 4;
       } else if (r.planned === "action") {
-        influenceGain = 12; riskGain = 8;
+        // Momentum bonus: high momentum makes actions more effective
+        influenceGain = 12 + (currentMomentum >= 55 ? 3 : 0);
+        riskGain = 8;
       } else if (r.planned === "cooldown") {
         riskGain      = r.layLowStreak >= 2 ? -4 : -10; // diminishing returns
         influenceGain = -3;
       }
 
       riskGain = Math.max(riskGain - r.network * 0.5, riskGain < 0 ? riskGain : 0);
-      if (currentSupport > 70) influenceGain += 5;
+      if (currentSupport > 75) influenceGain += 7;       // stronger support bonus
+      else if (currentSupport > 70) influenceGain += 5;
       if (currentSupport < 30) riskGain      += 5;
+
+      // Network passive influence: each 2 nodes generates +1 influence/turn
+      influenceGain += Math.floor(r.network / 2);
 
       return {
         ...r,
@@ -212,11 +237,14 @@ export default function Game() {
       };
     });
 
-    // French pressure on highest-influence region
-    const highest = predicted.reduce((a, b) => a.influence > b.influence ? a : b);
+    // French pressure on top 2 influence regions
+    const sorted = [...predicted].sort((a, b) => b.influence - a.influence);
+    const top1 = sorted[0]?.name;
+    const top2 = sorted[1]?.name;
     predicted = predicted.map(r => {
-      if (r.name === highest.name) r = { ...r, risk: clamp(r.risk + 8) };
-      if (r.risk >= 80)            r = { ...r, influence: clamp(r.influence - 5) };
+      if (r.name === top1) r = { ...r, risk: clamp(r.risk + frenchPressure) };
+      if (r.name === top2) r = { ...r, risk: clamp(r.risk + Math.floor(frenchPressure / 2)) };
+      if (r.risk >= 80)    r = { ...r, influence: clamp(r.influence - 5) };
       return r;
     });
 
@@ -227,10 +255,15 @@ export default function Game() {
       return r;
     });
 
+    // Network nodes are destroyed when a region hits 90%+ risk
+    predicted = predicted.map(r =>
+      r.risk >= 90 && r.network > 0 ? { ...r, network: r.network - 1 } : r
+    );
+
     return predicted;
   }
 
-  const predictedRegions = predictNextState(support);
+  const predictedRegions = predictNextState(support, momentum);
 
   function getTrend(current, predicted, type) {
     const diff = Math.round(predicted - current);
@@ -257,22 +290,40 @@ export default function Game() {
     const logEvents = [];
 
     regions.forEach(r => {
-      if (r.planned === "action")   momentumGain = Math.min(momentumGain + 5, 10); // cap at +10
-      if (r.planned === "cooldown") newSupport   = clamp(newSupport + 3);
+      if (r.planned === "action")     momentumGain = Math.min(momentumGain + 5, 10); // cap at +10
+      if (r.planned === "cooldown")   newSupport   = clamp(newSupport + 3);
+      if (r.planned === "propaganda") newSupport   = clamp(newSupport + 1); // propaganda builds support
     });
     newMomentum = clamp(newMomentum + momentumGain - 3); // -3 natural decay
     newSupport  = clamp(newSupport  - 1);                // -1 passive erosion
 
-    const updated  = predictNextState(newSupport);
+    let updated  = predictNextState(newSupport, newMomentum);
     const nextTurn = turn + 1;
 
     // Build log entry
-    regions.forEach((r, i) => {
+    regions.forEach(r => {
       if (r.planned) logEvents.push(`${r.name}: ${ACTION_LABELS[r.planned]}`);
     });
     updated.forEach(r => {
       if (r.risk >= 85) logEvents.push(`⚠ ${r.name} — rủi ro nguy hiểm`);
     });
+
+    // Random event (25% chance each turn)
+    if (Math.random() < 0.25) {
+      const event = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)];
+      const prefix = event.type === "bad" ? "⚠" : "★";
+      if (event.target === "region") {
+        const targetIdx = Math.floor(Math.random() * updated.length);
+        const changes = event.apply(updated[targetIdx]);
+        updated = updated.map((r, i) => i === targetIdx ? { ...r, ...changes } : r);
+        logEvents.push(`${prefix} Sự kiện: ${event.label.replace("{name}", updated[targetIdx].name)}`);
+      } else {
+        const changes = event.apply();
+        if (changes.supportDelta)  newSupport  = clamp(newSupport  + changes.supportDelta);
+        if (changes.momentumDelta) newMomentum = clamp(newMomentum + changes.momentumDelta);
+        logEvents.push(`${prefix} Sự kiện: ${event.label}`);
+      }
+    }
 
     const withStreaks = updated.map((r, i) => ({
       ...r,
@@ -906,10 +957,10 @@ export default function Game() {
                 </p>
 
                 {[
-                  ["Xây dựng mạng lưới", "Tạo cơ sở bí mật. Mỗi nút giảm rủi ro cho các hành động sau. Đầu tư sớm sẽ có lợi lâu dài.", "#4a8ad9"],
-                  ["Tuyên truyền",        "Tăng ảnh hưởng ổn định với rủi ro vừa phải. Tốt khi công chúng ủng hộ cao.",           "#78b838"],
-                  ["Tổ chức hành động",  "Tăng ảnh hưởng mạnh nhưng rủi ro cao. Đóng góp vào động lực cách mạng (tối đa 2 vùng tính).", "#e09030"],
-                  ["Ẩn náu",             "Giảm rủi ro khẩn cấp. Không dùng liên tiếp quá 2 quý — hiệu quả sẽ giảm mạnh!",       "#c05050"],
+                  ["Xây dựng mạng lưới", "Tạo cơ sở bí mật (+1 nút, +2 rủi ro). Mỗi nút giảm rủi ro & tạo ra +1 ảnh hưởng/2 nút mỗi quý. Đầu tư sớm là lợi thế lớn.", "#4a8ad9"],
+                  ["Tuyên truyền",        "Tăng ảnh hưởng (+8) và nhẹ tăng sự ủng hộ (+1). Rủi ro vừa phải. Hiệu quả hơn khi ủng hộ nhân dân cao.",                   "#78b838"],
+                  ["Tổ chức hành động",  "Tăng ảnh hưởng mạnh (+12, hoặc +15 nếu động lực ≥55%). Rủi ro cao. Đóng góp vào động lực (tối đa 2 vùng tính).",            "#e09030"],
+                  ["Ẩn náu",             "Giảm rủi ro khẩn cấp (−10, hoặc −4 sau 2 quý liên tiếp) và tăng sự ủng hộ (+3). Không lạm dụng!",                           "#c05050"],
                 ].map(([name, desc, color]) => (
                   <div key={name} style={{ marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>
                     <div style={{ color, fontWeight: "bold", fontSize: 13, marginBottom: 2 }}>{name}</div>
@@ -920,9 +971,10 @@ export default function Game() {
                 <div style={{ background: "rgba(200,160,50,0.08)", border: `1px solid #5a4a10`, padding: "10px 12px", marginTop: 4 }}>
                   <div style={{ color: C.gold, fontWeight: "bold", fontSize: 13, marginBottom: 6 }}>Lưu ý quan trọng</div>
                   <ul style={{ color: C.muted, fontSize: 12, paddingLeft: 14, margin: 0, lineHeight: 2 }}>
-                    <li>Nhấn nút <strong style={{ color: C.gold }}>?</strong> bên cạnh mỗi hành động để xem mô tả chi tiết</li>
-                    <li>Pháp tấn công vùng có ảnh hưởng <em>cao nhất</em></li>
-                    <li>Vùng không lên kế hoạch mất 1% ảnh hưởng/quý</li>
+                    <li>Pháp tấn công <em>2 vùng</em> ảnh hưởng cao nhất mỗi quý</li>
+                    <li>Áp lực Pháp <em>tăng dần</em> theo từng giai đoạn lịch sử</li>
+                    <li>Nút mạng lưới bị phá nếu rủi ro vùng đạt 90%+</li>
+                    <li>Sự kiện ngẫu nhiên xảy ra ~25% mỗi quý — tốt hoặc xấu</li>
                     <li>Mũi tên ↑↓ trên mỗi chỉ số dự báo lượt tới</li>
                   </ul>
                 </div>
