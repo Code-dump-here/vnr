@@ -628,6 +628,21 @@ export default function Game() {
   const strong   = regions.filter(r => r.influence >= 60).length;
   const planned  = regions.filter(r => r.planned).length;
 
+  // Predicted global stats for next turn (mirrors resolveTurn logic, no random events)
+  const predMomentum = (() => {
+    let gain = 0;
+    regions.forEach(r => { if (r.planned === "action") gain = Math.min(gain + 5, 10); });
+    return clamp(momentum + gain - 3);
+  })();
+  const predSupport = (() => {
+    let s = support;
+    regions.forEach(r => {
+      if (r.planned === "cooldown")   s = clamp(s + 3);
+      if (r.planned === "propaganda") s = clamp(s + 1);
+    });
+    return clamp(s - 1);
+  })();
+
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Be Vietnam Pro', sans-serif", color: C.parchment, display: "flex", flexDirection: "column" }}>
 
@@ -683,8 +698,8 @@ export default function Game() {
           {/* Global stats row */}
           <div style={{ display: "flex", gap: 16, marginBottom: 18 }}>
             {[
-              { label: "Động lực cách mạng",  value: momentum, color: "#4a8ad9", warn: momentum < 40 },
-              { label: "Sự ủng hộ nhân dân",  value: support,  color: "#50a848", warn: support  < 30 },
+              { label: "Động lực cách mạng",  value: momentum, pred: predMomentum, color: "#4a8ad9", warn: momentum < 40 },
+              { label: "Sự ủng hộ nhân dân",  value: support,  pred: predSupport,  color: "#50a848", warn: support  < 30 },
             ].map(stat => (
               <div key={stat.label} style={{
                 flex: 1,
@@ -699,7 +714,7 @@ export default function Game() {
                     fontWeight: "bold",
                     fontSize: 15,
                   }}>
-                    {stat.value}%
+                    {stat.value}%{getTrend(stat.value, stat.pred, "influence")}
                   </span>
                 </div>
                 <StatBar value={stat.value} color={stat.color} warn={stat.warn} />
