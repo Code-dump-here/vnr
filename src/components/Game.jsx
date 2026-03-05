@@ -35,13 +35,13 @@ const ACTION_LABELS = {
 
 const ACTION_TOOLTIPS = {
   network:
-    "Xây dựng cơ sở bí mật (+1 nút mạng, +2 rủi ro). Mỗi nút giảm 0.5 rủi ro cho mọi hành động trong vùng. Tối đa 5 nút.",
+    "+1 nút mạng, +2 rủi ro. Mỗi nút: giảm 0.5 rủi ro cho mọi hành động; mỗi 2 nút tạo thêm +1 ảnh hưởng/quý. Nút bị phá nếu rủi ro ≥ 90%. Tối đa 5 nút.",
   propaganda:
-    "Phát triển ảnh hưởng chính trị (+8 ảnh hưởng, +4 rủi ro). Hiệu quả tăng khi sự ủng hộ công chúng vượt 70%.",
+    "+8 ảnh hưởng, +4 rủi ro, +1 ủng hộ nhân dân. Bonus thêm +5 ảnh hưởng nếu ủng hộ >70%, +7 nếu >75%.",
   action:
-    "Tổ chức biểu tình và đình công (+12 ảnh hưởng, +8 rủi ro). Đóng góp tối đa +5 động lực mỗi quý — chỉ 2 vùng tính.",
+    "+12 ảnh hưởng (+15 nếu động lực ≥ 55%), +8 rủi ro. Đóng góp +5 động lực/quý — tối đa 2 vùng được tính.",
   cooldown:
-    "Ẩn tổ chức để tránh đàn áp (−10 rủi ro, −3 ảnh hưởng). Hiệu quả giảm còn −4 sau 2 quý liên tiếp (!)",
+    "−10 rủi ro (giảm còn −4 sau 2 quý liên tiếp), −3 ảnh hưởng, +3 ủng hộ nhân dân.",
 };
 
 const ERA_CONTEXT = [
