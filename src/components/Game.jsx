@@ -77,11 +77,11 @@ const ERA_CONTEXT = [
 ];
 
 const initialRegions = [
-  { name: "Việt Bắc",            influence: 30, risk: 20, network: 1, planned: null, layLowStreak: 0 },
-  { name: "Đồng bằng sông Hồng", influence: 20, risk: 25, network: 1, planned: null, layLowStreak: 0 },
-  { name: "Miền Trung",          influence: 15, risk: 30, network: 0, planned: null, layLowStreak: 0 },
-  { name: "Miền Nam",            influence: 10, risk: 35, network: 0, planned: null, layLowStreak: 0 },
-  { name: "Tây Bắc",             influence: 25, risk: 20, network: 1, planned: null, layLowStreak: 0 },
+  { name: "Việt Bắc",            influence: 22, risk: 28, network: 1, planned: null, layLowStreak: 0 },
+  { name: "Đồng bằng sông Hồng", influence: 14, risk: 33, network: 1, planned: null, layLowStreak: 0 },
+  { name: "Miền Trung",          influence: 10, risk: 38, network: 0, planned: null, layLowStreak: 0 },
+  { name: "Miền Nam",            influence:  7, risk: 44, network: 0, planned: null, layLowStreak: 0 },
+  { name: "Tây Bắc",             influence: 18, risk: 28, network: 1, planned: null, layLowStreak: 0 },
 ];
 
 function calculateScore(regions, momentum, support, result) {
@@ -188,7 +188,7 @@ export default function Game() {
       let influenceGain = 0, riskGain = 0, networkGain = 0;
 
       if (!r.planned) {
-        influenceGain = -1; // idle decay
+        influenceGain = -2; // idle decay
       } else if (r.planned === "network") {
         networkGain = 1; riskGain = 2;
       } else if (r.planned === "propaganda") {
@@ -215,7 +215,7 @@ export default function Game() {
     // French pressure on highest-influence region
     const highest = predicted.reduce((a, b) => a.influence > b.influence ? a : b);
     predicted = predicted.map(r => {
-      if (r.name === highest.name) r = { ...r, risk: clamp(r.risk + 6) };
+      if (r.name === highest.name) r = { ...r, risk: clamp(r.risk + 8) };
       if (r.risk >= 80)            r = { ...r, influence: clamp(r.influence - 5) };
       return r;
     });
@@ -260,7 +260,8 @@ export default function Game() {
       if (r.planned === "action")   momentumGain = Math.min(momentumGain + 5, 10); // cap at +10
       if (r.planned === "cooldown") newSupport   = clamp(newSupport + 3);
     });
-    newMomentum = clamp(newMomentum + momentumGain - 2); // -2 natural decay
+    newMomentum = clamp(newMomentum + momentumGain - 3); // -3 natural decay
+    newSupport  = clamp(newSupport  - 1);                // -1 passive erosion
 
     const updated  = predictNextState(newSupport);
     const nextTurn = turn + 1;
@@ -295,7 +296,7 @@ export default function Game() {
       return;
     }
     if (nextTurn === TOTAL_TURNS) {
-      const result = (strong >= 3 && newMomentum >= 60 && newSupport >= 50) ? "Victory" : "Defeat";
+      const result = (strong >= 3 && newMomentum >= 65 && newSupport >= 50) ? "Victory" : "Defeat";
       setGameOver({ result, score: calculateScore(updated, newMomentum, newSupport, result) });
     }
   }
@@ -940,7 +941,7 @@ export default function Game() {
 
                 {[
                   { label: "Vùng kiểm soát (≥ 60% ảnh hưởng)", current: strong,   target: 3,  unit: "/5 vùng", ok: strong   >= 3  },
-                  { label: "Động lực cách mạng",                 current: momentum, target: 60, unit: "%",      ok: momentum >= 60 },
+                  { label: "Động lực cách mạng",                 current: momentum, target: 65, unit: "%",      ok: momentum >= 65 },
                   { label: "Sự ủng hộ nhân dân",                 current: support,  target: 50, unit: "%",      ok: support  >= 50 },
                 ].map(obj => (
                   <div key={obj.label} style={{
@@ -960,7 +961,7 @@ export default function Game() {
                       </span>
                     </div>
                     <div style={{ fontSize: 11, color: "#5a5a40", fontStyle: "italic" }}>
-                      Cần đạt: {obj.target}{obj.unit}
+                      Cần đạt: ≥ {obj.target}{obj.unit}
                     </div>
                   </div>
                 ))}
